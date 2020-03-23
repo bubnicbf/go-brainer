@@ -1,21 +1,21 @@
 package main
 
 import (
-    "fmt"
     "flag"
-    "runtime"
-    "os/exec"
+    "fmt"
     "os"
-    "strings"
+    "os/exec"
     "path/filepath"
+    "runtime"
+    "strings"
 )
 
 const (
-    VERSION  = "0.1.0"
+    VERSION = "0.1.0"
 )
 
 const (
-    retOK   = iota
+    retOK = iota
     retFail
 )
 
@@ -52,7 +52,7 @@ func dealFileWithWhiteList(filename string, cmd string, suffixs []string) {
     if cap(suffixs) > 0 {
         ext := filepath.Ext(filename)
 
-        if ! stringInSlice(ext, suffixs) {
+        if !stringInSlice(ext, suffixs) {
             fmt.Printf("skip deal with file of: %s\n", filename)
             return
         }
@@ -62,10 +62,12 @@ func dealFileWithWhiteList(filename string, cmd string, suffixs []string) {
     execCmd(cmd, true)
 }
 
-func dealWithDir(path string, cmd string, suffixs []string) {
+func dealDirWithWhiteList(path string, cmd string, suffixs []string) {
     fmt.Printf("deal with dir of: %s\n", path)
     err := filepath.Walk(path, func(path string, f os.FileInfo, err error) error {
-        if ( f == nil ) {return err}
+        if f == nil {
+            return err
+        }
         if f.IsDir() {
             if strings.HasPrefix(f.Name(), ".") {
                 return filepath.SkipDir
@@ -73,7 +75,7 @@ func dealWithDir(path string, cmd string, suffixs []string) {
                 return nil
             }
         } else {
-            if ! strings.HasPrefix(f.Name(), ".") {
+            if !strings.HasPrefix(f.Name(), ".") {
                 dealFileWithWhiteList(path, cmd, suffixs)
             }
         }
@@ -94,7 +96,7 @@ func isExists(file string) (ret bool, err error) {
     }
 }
 
-func main(){
+func main() {
 
     var cmd string
     var suffixArray []string
@@ -112,13 +114,13 @@ func main(){
     }
 
     switch runtime.GOOS {
-        case "windows":
-            fmt.Printf("[Error] not supported under windows.\n")
-            os.Exit(retFail)
-        case "darwin", "freebsd":
-            cmd = "/usr/bin/sed -i \"\" \"s/[ ]*$//g\" "
-        default:
-            cmd = "sed -i \"s/[ \t]*$//g\" "
+    case "windows":
+        fmt.Printf("[Error] not supported under windows.\n")
+        os.Exit(retFail)
+    case "darwin", "freebsd":
+        cmd = "/usr/bin/sed -i \"\" \"s/[ ]*$//g\" "
+    default:
+        cmd = "sed -i \"s/[ \t]*$//g\" "
     }
 
     *op_path = strings.TrimSpace(*op_path)
@@ -134,7 +136,7 @@ func main(){
         flag.Usage()
         os.Exit(retFail)
     } else if *op_file != "" {
-        if _, err := isExists(*op_file); err == nil  {
+        if _, err := isExists(*op_file); err == nil {
             if *op_file, err = filepath.Abs(*op_file); err != nil {
                 panic(err)
             }
@@ -142,11 +144,11 @@ func main(){
             dealFileWithWhiteList(*op_file, cmd, suffixArray)
         }
     } else if *op_path != "" {
-        if _, err := isExists(*op_path); err == nil  {
+        if _, err := isExists(*op_path); err == nil {
             if *op_path, err = filepath.Abs(*op_path); err != nil {
                 panic(err)
             }
-            dealWithDir(*op_path, cmd, suffixArray)
+            dealDirWithWhiteList(*op_path, cmd, suffixArray)
         }
     }
 }
